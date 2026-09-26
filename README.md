@@ -1,4 +1,4 @@
-'# zed-plsqllang
+# zed-plsqllang
 
 Zed extension wiring plsqllang-server (a PL/SQL LSP for syntax checking) into Zed as a language server for SQL files.
 
