@@ -2,9 +2,9 @@ id = "plsqllang"
 name = "PL/SQL (plsqllang)"
 version = "0.0.1"
 schema_version = 1
-authors = ["your-name"]
+authors = ["CJ-518"]
 description = "PL/SQL syntax checking via plsqllang-server (LSP)"
-repository = "https://github.com/your-name/zed-plsqllang"
+repository = "https://github.com/CJ-518/Zed-PL-SQL"
 
 [language_servers.plsqllang]
 name = "plsqllang"
