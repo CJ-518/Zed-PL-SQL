@@ -1,5 +1,5 @@
-id = "plsqllang"
-name = "PL/SQL (plsqllang)"
+id = "plsqllang-lsp"
+name = "PL/SQL LSP (plsqllang)"
 version = "0.0.1"
 schema_version = 1
 authors = ["CJ-518"]
