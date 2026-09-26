@@ -1,0 +1,11 @@
+id = "plsqllang"
+name = "PL/SQL (plsqllang)"
+version = "0.0.1"
+schema_version = 1
+authors = ["your-name"]
+description = "PL/SQL syntax checking via plsqllang-server (LSP)"
+repository = "https://github.com/your-name/zed-plsqllang"
+
+[language_servers.plsqllang]
+name = "plsqllang"
+language = "SQL"
