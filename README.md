@@ -4,6 +4,8 @@
 
 Zed extension wiring [plsqllang-server](https://github.com/EwanDubashinski/plsqllang-server) (a PL/SQL LSP for syntax checking) into Zed as a language server for SQL files.
 
+A small proxy (`plsqllang-proxy`) sits between Zed and the real `plsqllang-server`. Because the upstream parser's grammar only checks a single top-level statement per document, the proxy splits each buffer into one virtual document per top-level SQL/PL-SQL statement, sends each to the real server independently, and remaps + merges the diagnostics it gets back onto the real document's line numbers — so every statement in a multi-statement script gets checked, not just the first. The proxy also filters out known false-positive diagnostics for SQL\*Plus/SQLcl client-side directives that the parser doesn't understand.
+
 ## Prerequisites
 
 You need a `plsqllang-server` binary on your PATH. The easiest source is the
@@ -28,21 +30,18 @@ Create an executable `plsqllang-server` shell script somewhere on your PATH:
 exec java -jar /path/to/server-all.jar "$@"
 ```
 
+You also need the `plsqllang-proxy` binary on your PATH. Build it from the `proxy/` directory of this repo (`cargo build --release`) and make sure the resulting binary is on PATH.
+
 ## Installing this extension
 
 1. Clone this repo.
 2. In Zed: Command Palette → `zed: install dev extension` → select the cloned folder.
-3. Open a `.sql` file — diagnostics should appear from `plsqllang-server`.
+3. Open a `.sql` file — diagnostics should appear from `plsqllang-server`, routed through `plsqllang-proxy`.
 
 ## Limitations
 
 - **Syntax checking only** — no semantic awareness of your actual database schema (tables, columns, packages aren't validated against a live connection).
 - **Requires manually sourcing `server-all.jar`** as described above (see Prerequisites) — the upstream `plsqllang-server` repo currently can't be built from source standalone.
-- **False positives on SQL\*Plus / SQLcl scripting syntax.** The parser targets PL/SQL blocks specifically and doesn't understand SQL\*Plus client directives. Expect it to flag valid lines like:
-  - `SET SERVEROUTPUT ON`, `SET VERIFY OFF`, and other `SET` commands
-  - `DEFINE variable = value`
-  - `&substitution_variable` references
-
-  as syntax errors even though they run fine in SQLcl or SQL\*Plus. These are false positives from parser scope, not real bugs in your SQL — disregard diagnostics on lines using this kind of client-side syntax.
-- **False positive after the first top-level statement in multi-statement scripts.** The parser's grammar appears to only accept a single top-level unit before `EOF`. A file containing more than one `/`-terminated unit (e.g. a `CREATE PROCEDURE ... END; /` block followed by a `CREATE FUNCTION ...`) will report `mismatched input 'CREATE' expecting <EOF>` (or similar) on the second and subsequent units, even though each one is valid PL/SQL on its own. This is an upstream parser limitation, not something this extension can work around — `language_server_command` only controls how the server process is launched, not how the buffer is chunked before reaching it. Disregard diagnostics of this shape on later statements in a script; consider filing this against the upstream `plsqllang-server`/parser project.
+- **False positives on SQL\*Plus / SQLcl scripting syntax.** The parser targets PL/SQL blocks specifically and doesn't understand SQL\*Plus client directives. `plsqllang-proxy` filters out the known cases — `SET` commands (`SET SERVEROUTPUT ON`, `SET VERIFY OFF`, etc.), `DEFINE variable = value`, and `&substitution_variable` references — but any directive not yet in its filter list may still be flagged as a syntax error even though it runs fine in SQLcl or SQL\*Plus. If you hit one, it's a missing filter entry, not a real bug in your SQL.
+- **Hover / go-to-definition may not resolve correctly.** `plsqllang-proxy` splits each document into per-statement virtual documents so that every statement gets checked (fixing the upstream single-statement limitation for diagnostics), but requests like hover or go-to-definition still reference positions in the real document — positions the underlying server never sees directly, since it only ever operates on the chunk-local virtual documents. These requests are forwarded unchanged and may not resolve correctly as a result.
 - Single-maintainer upstream project with no releases — expect occasional rough edges in the underlying parser itself, independent of anything in this extension.

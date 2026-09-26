@@ -1,0 +1,13 @@
+[package]
+name = "plsqllang-proxy"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "plsqllang-proxy"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = "1"
+regex = "1"
